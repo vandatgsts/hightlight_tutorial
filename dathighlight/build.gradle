@@ -34,11 +34,10 @@ android {
 
 dependencies {
 
-    def core_version = "1.13.1"
+    implementation libs.androidx.core.ktx
+    implementation 'androidx.appcompat:appcompat:1.6.1'
 
-    // Java language implementation
-    implementation("androidx.core:core-ktx:$core_version")
+    implementation 'com.google.android.material:material:1.12.0'
 
-    implementation ('androidx.appcompat:appcompat:1.7.0')
 
 }
