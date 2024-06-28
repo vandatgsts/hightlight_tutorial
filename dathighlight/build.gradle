@@ -1,6 +1,6 @@
 plugins {
     id 'com.android.library'
-    alias(libs.plugins.jetbrains.kotlin.android)
+    id 'kotlin-android'
 }
 
 android {
@@ -34,11 +34,11 @@ android {
 
 dependencies {
 
-    implementation libs.androidx.core.ktx
-    implementation libs.androidx.appcompat
-    implementation libs.material
-    testImplementation libs.junit
-    androidTestImplementation libs.androidx.junit
-    androidTestImplementation libs.androidx.espresso.core
+    def core_version = "1.13.1"
+
+    // Java language implementation
+    implementation("androidx.core:core-ktx:$core_version")
+
+    implementation ('androidx.appcompat:appcompat:1.7.0')
 
 }
