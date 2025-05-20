@@ -1,19 +1,15 @@
-package com.dat.dathighlight.util;
+package com.dat.dathighlight.util
 
-import android.util.Log;
+import android.util.Log
 
 /**
  * Created by zhy on 15/9/23.
  */
-public class L
-{
-    private static final String TAG = "HighLight";
-    private static boolean debug = true;
+object L {
+    private const val TAG = "HighLight"
+    private const val debug = true
 
-    public static void e(String msg)
-    {
-        if (debug)
-            Log.e(TAG, msg);
+    fun e(msg: String) {
+        if (debug) Log.e(TAG, msg)
     }
-
 }

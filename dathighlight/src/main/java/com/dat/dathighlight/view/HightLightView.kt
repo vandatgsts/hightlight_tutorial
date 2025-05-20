@@ -1,313 +1,243 @@
-package com.dat.dathighlight.view;
+package com.dat.dathighlight.view
 
-import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Paint;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffXfermode;
-import android.view.Gravity;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.widget.FrameLayout;
-
-import java.util.List;
-
-import com.dat.dathighlight.HighLight;
+import android.annotation.SuppressLint
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
+import android.view.Gravity
+import android.view.LayoutInflater
+import android.view.View
+import android.widget.FrameLayout
+import com.dat.dathighlight.HighLight
+import com.dat.dathighlight.HighLight.ViewPosInfo
 
 /**
- * Created by zhy on 15/10/8.
+ * Được tạo bởi zhy vào 15/10/8.
  */
-public class HightLightView extends FrameLayout
-{
-    private static final int DEFAULT_WIDTH_BLUR = 15;
-    private static final int DEFAULT_RADIUS = 6;
-    private static final PorterDuffXfermode MODE_DST_OUT = new PorterDuffXfermode(PorterDuff.Mode.DST_OUT);
+@SuppressLint("ViewConstructor")
+class HightLightView(
+    context: Context,
+    private val mHighLight: HighLight?,
+    maskColor: Int,
+    private val mViewRects: MutableList<ViewPosInfo>,
+    isNext: Boolean
+) : FrameLayout(context) {
+    private var mMaskBitmap: Bitmap? = null
+    private var mLightBitmap: Bitmap? = null
+    private var mPaint: Paint = Paint().apply {
+        isDither = true
+        isAntiAlias = true
+        style = Paint.Style.FILL
+    }
+    private val mInflater: LayoutInflater = LayoutInflater.from(context)
 
-    private Bitmap mMaskBitmap;
-    private Bitmap mLightBitmap;
-    private Paint mPaint;
-    private List<HighLight.ViewPosInfo> mViewRects;
-    private HighLight mHighLight;
-    private LayoutInflater mInflater;
+    //một số cấu hình
+    private var maskColor = -0x34000000
 
-    //some config
-//    private boolean isBlur = true;
-    private int maskColor = 0xCC000000;
+    // thêm bởi isanwenyu@163.com
+    val isNext: Boolean //cờ chế độ next
+    private var mPosition = -1 //vị trí hiện tại của layout gợi ý đang hiển thị
+    private var mViewPosInfo: ViewPosInfo? = null //thông tin vị trí layout được làm nổi bật hiện tại
 
-    // added by isanwenyu@163.com
-    private final boolean isNext;//next模式标志
-    private int mPosition=-1;//当前显示的提示布局位置
-    private HighLight.ViewPosInfo mViewPosInfo;//当前显示的高亮布局位置信息
-
-    public HightLightView(Context context, HighLight highLight, int maskColor, List<HighLight.ViewPosInfo> viewRects,boolean isNext)
-    {
-        super(context);
-        mHighLight = highLight;
-        mInflater = LayoutInflater.from(context);
-        mViewRects = viewRects;
-        this.maskColor = maskColor;
-//        this.isBlur = isBlur;
-        this.isNext=isNext;
-        setWillNotDraw(false);
-        init();
+    init {
+        this.maskColor = maskColor
+        this.isNext = isNext
+        setWillNotDraw(false)
     }
 
-    private void init()
-    {
-        mPaint = new Paint();
-        mPaint.setDither(true);
-        mPaint.setAntiAlias(true);
-//        if (isBlur)
-//            mPaint.setMaskFilter(new BlurMaskFilter(DEFAULT_WIDTH_BLUR, BlurMaskFilter.Blur.SOLID));
-        mPaint.setStyle(Paint.Style.FILL);
-
-    }
-
-    public void addViewForTip()
-    {
-        if (isNext)
-        {
-            //校验mPosition
-            if (mPosition < -1 || mPosition > mViewRects.size() - 1)
-            {
-                //重置位置
-                mPosition = 0;
-            } else if (mPosition == mViewRects.size() - 1)
-            {
-                //移除当前布局
-                mHighLight.remove();
-                return;
-            } else
-            {
+    fun addViewForTip() {
+        if (isNext) {
+            //kiểm tra mPosition
+            if (mPosition < -1 || mPosition > mViewRects.size - 1) {
+                //đặt lại vị trí
+                mPosition = 0
+            } else if (mPosition == mViewRects.size - 1) {
+                //xóa layout hiện tại
+                mHighLight?.remove()
+                return
+            } else {
                 //mPosition++
-                mPosition++;
+                mPosition++
             }
-            mViewPosInfo = mViewRects.get(mPosition);
+            mViewPosInfo = mViewRects.getOrNull(mPosition)
 
-            removeAllTips();
-            addViewForEveryTip(mViewPosInfo);
+            removeAllViews() // Xóa tất cả các layout gợi ý
+            mViewPosInfo?.let { addViewForEveryTip(it) }
 
-            if (mHighLight != null) {
-                mHighLight.sendNextMessage();
-            }
-
-        } else
-        {
-            for (HighLight.ViewPosInfo viewPosInfo : mViewRects)
-            {
-                addViewForEveryTip(viewPosInfo);
+            mHighLight?.sendNextMessage()
+        } else {
+            for (viewPosInfo in mViewRects) {
+                addViewForEveryTip(viewPosInfo)
             }
         }
     }
 
     /**
-     * Remove all hint layouts of the current highlighted layout
-     *
-     */
-    private void removeAllTips() {
-        removeAllViews();
-    }
-
-    /**
-     * Add each highlight layout
-     * @param viewPosInfo 高亮布局信息
+     * Thêm từng layout được làm nổi bật
+     * @param viewPosInfo thông tin layout được làm nổi bật
      * @author isanwenyu@163.com
      */
-    private void addViewForEveryTip(HighLight.ViewPosInfo viewPosInfo)
-    {
-        View view = mInflater.inflate(viewPosInfo.layoutId, this, false);
-        //设置id为layout id 供HighLight查找
-        view.setId(viewPosInfo.layoutId);
-        LayoutParams lp = buildTipLayoutParams(view, viewPosInfo);
+    private fun addViewForEveryTip(viewPosInfo: ViewPosInfo) {
+        viewPosInfo.marginInfo?.let { marginInfo ->
+            val view = mInflater.inflate(viewPosInfo.layoutId, this, false)
+            //đặt id thành layout id để HighLight tìm kiếm
+            view.id = viewPosInfo.layoutId
 
-        if (lp == null) return;
+            val lp = buildTipLayoutParams(view, viewPosInfo) ?: return
 
-        lp.leftMargin = (int) viewPosInfo.marginInfo.leftMargin;
-        lp.topMargin = (int) viewPosInfo.marginInfo.topMargin;
-        lp.rightMargin = (int) viewPosInfo.marginInfo.rightMargin;
-        lp.bottomMargin = (int) viewPosInfo.marginInfo.bottomMargin;
+            lp.leftMargin = marginInfo.leftMargin.toInt()
+            lp.topMargin = marginInfo.topMargin.toInt()
+            lp.rightMargin = marginInfo.rightMargin.toInt()
+            lp.bottomMargin = marginInfo.bottomMargin.toInt()
 
-        //fix the bug can't set gravity  LEFT|BOTTOM  or RIGHT|TOP
-//            if (lp.leftMargin == 0 && lp.topMargin == 0)
-//            {
-//                lp.gravity = Gravity.RIGHT | Gravity.BOTTOM;
-//            }
+            //xác định gravity dựa trên margin
+            lp.gravity = if (lp.rightMargin != 0) Gravity.RIGHT else Gravity.LEFT
+            lp.gravity = lp.gravity or if (lp.bottomMargin != 0) Gravity.BOTTOM else Gravity.TOP
 
-        if(lp.rightMargin != 0){
-            lp.gravity = Gravity.RIGHT;
-        }else {
-            lp.gravity = Gravity.LEFT;
+            addView(view, lp)
         }
-
-        if(lp.bottomMargin != 0){
-            lp.gravity |= Gravity.BOTTOM;
-        }else {
-            lp.gravity |= Gravity.TOP;
-        }
-        addView(view, lp);
     }
 
-    private void buildMask()
-    {
-        recycleBitmap(mMaskBitmap);
-        mMaskBitmap = Bitmap.createBitmap(getMeasuredWidth(), getMeasuredHeight(), Bitmap.Config.ARGB_4444);
-        Canvas canvas = new Canvas(mMaskBitmap);
-        canvas.drawColor(maskColor);
-        mPaint.setXfermode(MODE_DST_OUT);
-        mHighLight.updateInfo();
+    private fun buildMask() {
+        // Tạo lại bitmap cho mask
+        recycleBitmap(mMaskBitmap)
+        mMaskBitmap = Bitmap.createBitmap(measuredWidth, measuredHeight, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(mMaskBitmap!!)
+        canvas.drawColor(maskColor)
+        mPaint.xfermode = MODE_DST_OUT
+        mHighLight?.updateInfo()
 
-        recycleBitmap(mLightBitmap);
-        mLightBitmap = Bitmap.createBitmap(getMeasuredWidth(), getMeasuredHeight(), Bitmap.Config.ARGB_4444);
+        // Tạo lại bitmap cho highlight
+        recycleBitmap(mLightBitmap)
+        mLightBitmap = Bitmap.createBitmap(measuredWidth, measuredHeight, Bitmap.Config.ARGB_8888)
 
-        if(isNext)//如果是next模式添加每个提示布局的背景形状
-        {
-            //添加当前提示布局的高亮形状背景
-            addViewEveryTipShape(mViewPosInfo);
-        }else
-        {
-            for (HighLight.ViewPosInfo viewPosInfo : mViewRects)
-            {
-                addViewEveryTipShape(viewPosInfo);
+        if (isNext) {
+            // Thêm hình dạng nền làm nổi bật cho layout gợi ý hiện tại
+            mViewPosInfo?.let { addViewEveryTipShape(it) }
+        } else {
+            for (viewPosInfo in mViewRects) {
+                addViewEveryTipShape(viewPosInfo)
             }
         }
-        canvas.drawBitmap(mLightBitmap,0,0,mPaint);
+        canvas.drawBitmap(mLightBitmap!!, 0f, 0f, mPaint)
     }
 
     /**
-     * 主动回收之前创建的bitmap
-     * @param bitmap
+     * Chủ động thu hồi bitmap đã tạo trước đó
+     * @param bitmap bitmap cần thu hồi
      */
-    private void recycleBitmap(Bitmap bitmap) {
-        if (bitmap != null && !bitmap.isRecycled())
-        {
-            bitmap.recycle();
-            bitmap = null;
-            System.gc();
+    private fun recycleBitmap(bitmap: Bitmap?) {
+        if (bitmap != null && !bitmap.isRecycled) {
+            bitmap.recycle()
+            System.gc()
         }
     }
 
     /**
-     * 添加提示布局的背景形状
-     * @param viewPosInfo //提示布局的位置信息
+     * Thêm hình dạng nền cho layout gợi ý
+     * @param viewPosInfo thông tin vị trí của layout gợi ý
      * @author isanwenyu@16.com
      */
-    private void addViewEveryTipShape(HighLight.ViewPosInfo viewPosInfo)
-    {
-        viewPosInfo.lightShape.shape(mLightBitmap,viewPosInfo);
+    private fun addViewEveryTipShape(viewPosInfo: ViewPosInfo) {
+        viewPosInfo.lightShape?.shape(mLightBitmap, viewPosInfo)
     }
 
-    @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec)
-    {
-        int width = MeasureSpec.getSize(widthMeasureSpec);
-        int height = MeasureSpec.getSize(heightMeasureSpec);
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        val width = MeasureSpec.getSize(widthMeasureSpec)
+        val height = MeasureSpec.getSize(heightMeasureSpec)
 
-        measureChildren(MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),//
-                MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY));
-        setMeasuredDimension(width, height);
-
-
+        measureChildren(
+            MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),
+            MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY)
+        )
+        setMeasuredDimension(width, height)
     }
 
-    @Override
-    protected void onLayout(boolean changed, int left, int top, int right, int bottom)
-    {
-        super.onLayout(changed, left, top, right, bottom);
-        if (changed || isNext) //edited by isanwenyu@163.com for next mode
-        {
-            buildMask();
-            updateTipPos();
+    override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
+        super.onLayout(changed, left, top, right, bottom)
+        if (changed || isNext) { // Chỉnh sửa bởi isanwenyu@163.com cho chế độ next
+            buildMask()
+            updateTipPos()
         }
-
     }
 
-    private void updateTipPos()
-    {
-        if (isNext)//如果是next模式 只有一个子控件 刷新当前位置tip
-        {
-            View view = getChildAt(0);
+    private fun updateTipPos() {
+        if (isNext) { // Nếu là chế độ next chỉ có một control con, làm mới tip tại vị trí hiện tại
+            val view = getChildAt(0) ?: return
+            mViewPosInfo?.let { viewPosInfo ->
+                buildTipLayoutParams(view, viewPosInfo)?.let { lp ->
+                    view.layoutParams = lp
+                }
+            }
+        } else {
+            for (i in 0 until childCount) {
+                val view = getChildAt(i)
+                val viewPosInfo = mViewRects.getOrNull(i) ?: continue
 
-            LayoutParams lp = buildTipLayoutParams(view, mViewPosInfo);
-            if (lp == null) return;
-            view.setLayoutParams(lp);
-
-        }else
-        {
-            for (int i = 0, n = getChildCount(); i < n; i++)
-            {
-                View view = getChildAt(i);
-                HighLight.ViewPosInfo viewPosInfo = mViewRects.get(i);
-
-                LayoutParams lp = buildTipLayoutParams(view, viewPosInfo);
-                if (lp == null) continue;
-                view.setLayoutParams(lp);
+                buildTipLayoutParams(view, viewPosInfo)?.let { lp ->
+                    view.layoutParams = lp
+                }
             }
         }
     }
 
-    private LayoutParams buildTipLayoutParams(View view, HighLight.ViewPosInfo viewPosInfo)
-    {
-        LayoutParams lp = (LayoutParams) view.getLayoutParams();
-        if (lp.leftMargin == (int) viewPosInfo.marginInfo.leftMargin &&
-                lp.topMargin == (int) viewPosInfo.marginInfo.topMargin &&
-                lp.rightMargin == (int) viewPosInfo.marginInfo.rightMargin &&
-                lp.bottomMargin == (int) viewPosInfo.marginInfo.bottomMargin) return null;
+    private fun buildTipLayoutParams(view: View, viewPosInfo: ViewPosInfo): LayoutParams? {
+        val marginInfo = viewPosInfo.marginInfo ?: return null
+        val lp = view.layoutParams as? LayoutParams ?: LayoutParams(
+            LayoutParams.WRAP_CONTENT,
+            LayoutParams.WRAP_CONTENT
+        )
 
-        lp.leftMargin = (int) viewPosInfo.marginInfo.leftMargin;
-        lp.topMargin = (int) viewPosInfo.marginInfo.topMargin;
-        lp.rightMargin = (int) viewPosInfo.marginInfo.rightMargin;
-        lp.bottomMargin = (int) viewPosInfo.marginInfo.bottomMargin;
-
-        //fix the bug can't set gravity  LEFT|BOTTOM  or RIGHT|TOP
-//        if (lp.leftMargin == 0 && lp.topMargin == 0)
-//        {
-//            lp.gravity = Gravity.RIGHT | Gravity.BOTTOM;
-//        }
-        if(lp.rightMargin != 0){
-            lp.gravity = Gravity.RIGHT;
-        }else {
-            lp.gravity = Gravity.LEFT;
+        // Kiểm tra xem có cần cập nhật layout params không
+        if (lp.leftMargin == marginInfo.leftMargin.toInt() &&
+            lp.topMargin == marginInfo.topMargin.toInt() &&
+            lp.rightMargin == marginInfo.rightMargin.toInt() &&
+            lp.bottomMargin == marginInfo.bottomMargin.toInt()) {
+            return null
         }
 
-        if(lp.bottomMargin != 0){
-            lp.gravity |= Gravity.BOTTOM;
-        }else {
-            lp.gravity |= Gravity.TOP;
-        }
-        return lp;
+        lp.leftMargin = marginInfo.leftMargin.toInt()
+        lp.topMargin = marginInfo.topMargin.toInt()
+        lp.rightMargin = marginInfo.rightMargin.toInt()
+        lp.bottomMargin = marginInfo.bottomMargin.toInt()
+
+        // Xác định gravity dựa trên margin
+        lp.gravity = if (lp.rightMargin != 0) Gravity.RIGHT else Gravity.LEFT
+        lp.gravity = lp.gravity or if (lp.bottomMargin != 0) Gravity.BOTTOM else Gravity.TOP
+
+        return lp
     }
 
-
-    @Override
-    protected void onDraw(Canvas canvas)
-    {
-
+    override fun onDraw(canvas: Canvas) {
         try {
-            canvas.drawBitmap(mMaskBitmap, 0, 0, null);
-        } catch (Exception e) {
-            e.printStackTrace();
+            mMaskBitmap?.let { canvas.drawBitmap(it, 0f, 0f, null) }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
-        super.onDraw(canvas);
-
+        super.onDraw(canvas)
     }
 
-    public boolean isNext() {
-        return isNext;
+    val curentViewPosInfo: ViewPosInfo?
+        /**
+         * @return thông tin layout gợi ý được làm nổi bật hiện tại
+         */
+        get() = mViewPosInfo
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        // Tối ưu hóa việc thu hồi bitmap
+        recycleBitmap(mLightBitmap)
+        recycleBitmap(mMaskBitmap)
+        mLightBitmap = null
+        mMaskBitmap = null
     }
 
-    /**
-     * @return 当前高亮提示布局信息
-     */
-    public HighLight.ViewPosInfo getCurentViewPosInfo() {
-        return mViewPosInfo;
-    }
-
-    @Override
-    protected void onDetachedFromWindow() {
-        super.onDetachedFromWindow();
-        //optimize recycle bitmap
-        recycleBitmap(mLightBitmap);
-        recycleBitmap(mMaskBitmap);
+    companion object {
+        private const val DEFAULT_WIDTH_BLUR = 15
+        private const val DEFAULT_RADIUS = 6
+        private val MODE_DST_OUT = PorterDuffXfermode(PorterDuff.Mode.DST_OUT)
     }
 }

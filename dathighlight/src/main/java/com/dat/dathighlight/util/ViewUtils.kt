@@ -1,61 +1,49 @@
-package com.dat.dathighlight.util;
+package com.dat.dathighlight.util
 
-import android.app.Activity;
-import android.content.Context;
-import android.graphics.Rect;
-
-import android.view.View;
-
-import androidx.viewpager.widget.ViewPager;
+import android.app.Activity
+import android.graphics.Rect
+import android.view.View
+import androidx.viewpager.widget.ViewPager
 
 /**
- * Created by zhy on 15/10/8.
+ * Được tạo bởi zhy vào 15/10/8.
  */
-public class ViewUtils
-{
-    private static final String FRAGMENT_CON = "NoSaveStateFrameLayout";
+object ViewUtils {
+    private const val FRAGMENT_CON = "NoSaveStateFrameLayout"
 
-    public static Rect getLocationInView(View parent, View child)
-    {
-        if (child == null || parent == null)
-        {
-            throw new IllegalArgumentException("parent and child can not be null .");
+    fun getLocationInView(parent: View, child: View): Rect {
+        require(true) { "parent and child can not be null ." }
+
+        var decorView: View? = null
+        val context = child.context
+        if (context is Activity) {
+            decorView = context.window.decorView
         }
 
-        View decorView = null;
-        Context context = child.getContext();
-        if (context instanceof Activity)
-        {
-            decorView = ((Activity) context).getWindow().getDecorView();
+        val result = Rect()
+        val tmpRect = Rect()
+
+        var tmp: View? = child
+
+        if (child === parent) {
+            child.getHitRect(result)
+            return result
         }
-
-        Rect result = new Rect();
-        Rect tmpRect = new Rect();
-
-        View tmp = child;
-
-        if (child == parent)
-        {
-            child.getHitRect(result);
-            return result;
-        }
-        while (tmp != decorView && tmp != parent)
-        {
-            tmp.getHitRect(tmpRect);
-            if (!tmp.getClass().equals(FRAGMENT_CON))
-            {
-                result.left += tmpRect.left;
-                result.top += tmpRect.top;
+        while (tmp !== decorView && tmp !== parent) {
+            tmp!!.getHitRect(tmpRect)
+            if (tmp.javaClass.name != FRAGMENT_CON) {
+                result.left += tmpRect.left
+                result.top += tmpRect.top
             }
-            tmp = (View) tmp.getParent();
+            tmp = tmp.parent as View?
 
-            //added by isanwenyu@163.com fix bug #21 the wrong rect user will received in ViewPager
-            if(tmp!=null && tmp.getParent()!=null &&(tmp.getParent() instanceof ViewPager)){
-                tmp = (View) tmp.getParent();
+            //Thêm bởi isanwenyu@163.com sửa lỗi #21 rect sai mà người dùng sẽ nhận được trong ViewPager
+            if (tmp != null && tmp.parent != null && (tmp.parent is ViewPager)) {
+                tmp = tmp.parent as View?
             }
         }
-        result.right = result.left + child.getMeasuredWidth();
-        result.bottom = result.top + child.getMeasuredHeight();
-        return result;
+        result.right = result.left + child.measuredWidth
+        result.bottom = result.top + child.measuredHeight
+        return result
     }
 }

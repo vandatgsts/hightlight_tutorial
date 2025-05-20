@@ -1,46 +1,40 @@
-package com.dat.dathighlight.shape;
+package com.dat.dathighlight.shape
 
-import android.graphics.Bitmap;
-import android.graphics.BlurMaskFilter;
-import android.graphics.Canvas;
-import android.graphics.Paint;
-import android.graphics.RectF;
-
-import com.dat.dathighlight.HighLight;
+import android.graphics.Bitmap
+import android.graphics.BlurMaskFilter
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.RectF
+import com.dat.dathighlight.HighLight.ViewPosInfo
+import kotlin.math.max
 
 /**
  * Created by caizepeng on 16/8/20.
  * Edited by isanwenyu@163.com 16/10/26.
  */
-public class CircleLightShape extends BaseLightShape {
-    public CircleLightShape() {
-        super();
-    }
+class CircleLightShape : BaseLightShape {
+    constructor() : super()
 
-    public CircleLightShape(float dx, float dy) {
-        super(dx, dy);
-    }
+    constructor(dx: Float, dy: Float) : super(dx, dy)
 
-    public CircleLightShape(float dx, float dy, float blurRadius) {
-        super(dx, dy, blurRadius);
-    }
+    constructor(dx: Float, dy: Float, blurRadius: Float) : super(dx, dy, blurRadius)
 
-    @Override
-    protected void drawShape(Bitmap bitmap, HighLight.ViewPosInfo viewPosInfo) {
-        Canvas canvas = new Canvas(bitmap);
-        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        paint.setDither(true);
-        paint.setAntiAlias(true);
+    override fun drawShape(bitmap: Bitmap, viewPosInfo: ViewPosInfo) {
+        val canvas = Canvas(bitmap)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        paint.setDither(true)
+        paint.setAntiAlias(true)
         if (blurRadius > 0) {
-            paint.setMaskFilter(new BlurMaskFilter(blurRadius, BlurMaskFilter.Blur.SOLID));
+            paint.setMaskFilter(BlurMaskFilter(blurRadius, BlurMaskFilter.Blur.SOLID))
         }
-        RectF rectF = viewPosInfo.rectF;
-        canvas.drawCircle(rectF.left+(rectF.width()/2),rectF.top+(rectF.height()/2),
-                Math.max(rectF.width(),rectF.height())/2,paint);
+        val rectF = viewPosInfo.rectF
+        canvas.drawCircle(
+            rectF!!.left + (rectF.width() / 2), rectF.top + (rectF.height() / 2),
+            max(rectF.width(), rectF.height()) / 2, paint
+        )
     }
 
-    @Override
-    protected void resetRectF4Shape(RectF viewPosInfoRectF, float dx, float dy) {
-        viewPosInfoRectF.inset(dx,dy);
+    override fun resetRectF4Shape(viewPosInfoRectF: RectF, dx: Float, dy: Float) {
+        viewPosInfoRectF.inset(dx, dy)
     }
 }

@@ -1,35 +1,50 @@
-package com.dat.dathighlight.position;
+package com.dat.dathighlight.position
 
-import android.graphics.RectF;
-
-import com.dat.dathighlight.HighLight;
+import android.graphics.RectF
+import com.dat.dathighlight.HighLight.MarginInfo
+import com.dat.dathighlight.HighLight.OnPosCallback
 
 /**
- * Created by caizepeng on 16/8/20.
+ * Được tạo bởi caizepeng vào 16/8/20.
  */
-public abstract class OnBaseCallback implements HighLight.OnPosCallback {
-    protected float offset ;
+abstract class OnBaseCallback : OnPosCallback {
+    protected var offset: Float = 0f
 
-    public OnBaseCallback() {
-    }
+    constructor()
 
-    public OnBaseCallback(float offset) {
-        this.offset = offset;
+    constructor(offset: Float) {
+        this.offset = offset
     }
 
     /**
-     * 如果需要调整位置,重写该方法
+     * Nếu cần điều chỉnh vị trí, hãy ghi đè phương thức này
      * @param rightMargin
      * @param bottomMargin
      * @param rectF
      * @param marginInfo
      */
-    public  void posOffset(float rightMargin, float bottomMargin, RectF rectF, HighLight.MarginInfo marginInfo){}
-
-    @Override
-    public void getPos(float rightMargin, float bottomMargin, RectF rectF, HighLight.MarginInfo marginInfo) {
-        getPosition(rightMargin,bottomMargin,rectF,marginInfo);
-        posOffset(rightMargin,bottomMargin,rectF,marginInfo);
+    fun posOffset(
+        rightMargin: Float,
+        bottomMargin: Float,
+        rectF: RectF?,
+        marginInfo: MarginInfo?
+    ) {
     }
-    public abstract void getPosition(float rightMargin, float bottomMargin, RectF rectF, HighLight.MarginInfo marginInfo);
+
+    override fun getPos(
+        rightMargin: Float,
+        bottomMargin: Float,
+        rectF: RectF?,
+        marginInfo: MarginInfo?
+    ) {
+        getPosition(rightMargin, bottomMargin, rectF, marginInfo)
+        posOffset(rightMargin, bottomMargin, rectF, marginInfo)
+    }
+
+    abstract fun getPosition(
+        rightMargin: Float,
+        bottomMargin: Float,
+        rectF: RectF?,
+        marginInfo: MarginInfo?
+    )
 }

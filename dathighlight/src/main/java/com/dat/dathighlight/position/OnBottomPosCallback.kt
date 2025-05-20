@@ -1,24 +1,26 @@
-package com.dat.dathighlight.position;
+package com.dat.dathighlight.position
 
-import android.graphics.RectF;
-
-import com.dat.dathighlight.HighLight;
+import android.graphics.RectF
+import com.dat.dathighlight.HighLight.MarginInfo
 
 /**
- * Created by caizepeng on 16/8/20.
+ * Được tạo bởi caizepeng vào 16/8/20.
  */
-public  class OnBottomPosCallback extends OnBaseCallback{
-    public OnBottomPosCallback() {
-    }
+class OnBottomPosCallback : OnBaseCallback {
+    constructor()
 
-    public OnBottomPosCallback(float offset) {
-        super(offset);
-    }
+    constructor(offset: Float) : super(offset)
 
-    @Override
-    public void getPosition(float rightMargin, float bottomMargin, RectF rectF, HighLight.MarginInfo marginInfo) {
-        marginInfo.rightMargin = rightMargin;
-        marginInfo.topMargin = rectF.top + rectF.height()+offset;
+    override fun getPosition(
+        rightMargin: Float,
+        bottomMargin: Float,
+        rectF: RectF?,
+        marginInfo: MarginInfo?
+    ) {
+        if (rectF == null || marginInfo == null) return
+
+        marginInfo.rightMargin = rightMargin
+        marginInfo.topMargin = rectF.top + rectF.height() + offset
     }
 
 }
