@@ -1,5 +1,4 @@
-
-    <RelativeLayout
+<RelativeLayout
         xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -13,7 +12,7 @@
             android:onClick="showKnownTipView"
             android:layout_margin="10dp"
             android:layout_alignParentLeft="true"
-            android:text="showKnownTip" />
+            android:text="Hiển thị gợi ý" />
         <Button
             android:id="@+id/btn_show_next_known_tip"
             android:layout_width="wrap_content"
@@ -21,7 +20,7 @@
             android:onClick="showNextKnownTipView"
             android:layout_margin="10dp"
             android:layout_alignParentLeft="true"
-            android:text="showNextKnownTip"
+            android:text="Hiển thị gợi ý lần lượt"
             android:layout_below="@id/btn_show_known_tip"/>
 
         <Button
@@ -31,7 +30,7 @@
             android:onClick="showTipView"
             android:layout_margin="10dp"
             android:layout_alignParentRight="true"
-            android:text="showTip" />
+            android:text="Hiển thị gợi ý đơn" />
         <Button
             android:id="@+id/btn_show_next_tip"
             android:layout_width="wrap_content"
@@ -39,7 +38,7 @@
             android:onClick="showNextTipView"
             android:layout_margin="10dp"
             android:layout_alignParentRight="true"
-            android:text="showNextTip"
+            android:text="Hiển thị gợi ý chuỗi"
             android:layout_below="@id/btn_show_tip"/>
 
         <ListView
@@ -53,7 +52,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentLeft="true"
-            android:text="高亮按钮" />
+            android:text="Nút làm nổi bật" />
 
 
         <Button
@@ -62,7 +61,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="290dp"
             android:layout_alignParentRight="true"
-            android:text="高亮按钮1" />
+            android:text="Nút làm nổi bật 1" />
 
 
         <Button
@@ -73,7 +72,7 @@
             android:layout_height="wrap_content"
             android:layout_alignParentLeft="true"
             android:layout_alignParentBottom="true"
-            android:text="高亮按钮2" />
+            android:text="Nút làm nổi bật 2" />
         <!--<Button android:id="@+id/id_btn_amazing"-->
                 <!--android:layout_width="wrap_content"-->
                 <!--android:layout_height="wrap_content"-->
@@ -107,7 +106,7 @@
                 <!--android:layout_alignParentTop="true"-->
                 <!--android:layout_margin="16dp"-->
                 <!--android:onClick="remove"-->
-                <!--android:text="账户信息"-->
+                <!--android:text="Thông tin tài khoản"-->
             <!--/>-->
 
         <!--<Button android:id="@+id/id_btn_important_right"-->
@@ -117,7 +116,8 @@
             <!--android:layout_alignParentTop="true"-->
             <!--android:layout_margin="16dp"-->
             <!--android:onClick="remove"-->
-            <!--android:text="账户信息"-->
+            <!--android:text="Thông tin tài khoản"-->
             <!--/>-->
 
     </RelativeLayout>
+
