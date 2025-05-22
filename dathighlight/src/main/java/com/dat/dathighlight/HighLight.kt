@@ -12,6 +12,8 @@ import android.view.ViewGroup
 import android.view.ViewTreeObserver.OnGlobalLayoutListener
 import android.widget.FrameLayout
 import android.widget.RelativeLayout
+import com.dat.dathighlight.animation.HighlightAnimation
+import com.dat.dathighlight.animation.HighlightAnimationHelper
 import com.dat.dathighlight.interfaces.HighLightInterface
 import com.dat.dathighlight.interfaces.HighLightInterface.OnClickCallback
 import com.dat.dathighlight.interfaces.HighLightInterface.OnLayoutCallback
@@ -25,6 +27,7 @@ import java.lang.ref.WeakReference
 
 /**
  * Được tạo bởi zhy vào 15/10/8.
+ * Cải tiến với Kotlin APIs hiện đại và tính năng mới.
  */
 class HighLight(private val mContext: Context) : HighLightInterface, OnGlobalLayoutListener {
     class ViewPosInfo {
@@ -65,6 +68,18 @@ class HighLight(private val mContext: Context) : HighLightInterface, OnGlobalLay
 
     private var intercept = true
     private var maskColor = -0x34000000
+
+    // Animation properties
+    private var enterAnimation: HighlightAnimation? = null
+    private var exitAnimation: HighlightAnimation? = null
+
+    // Lambda callbacks for modern Kotlin style
+    private var onClickListener: (() -> Unit)? = null
+    private var onShowListener: ((HightLightView) -> Unit)? = null
+    private var onRemoveListener: (() -> Unit)? = null
+    private var onNextListener: ((HightLightView?, View?, View?) -> Unit)? = null
+    private var onLayoutListener: (() -> Unit)? = null
+    private var onTipViewInflatedListener: ((View) -> Unit)? = null
 
     // Thêm bởi isanwenyu@163.com
     private var autoRemove = true // điểm gọi là tự động loại bỏ, mặc định là true
@@ -116,6 +131,52 @@ class HighLight(private val mContext: Context) : HighLightInterface, OnGlobalLay
 
     fun maskColor(maskColor: Int): HighLight {
         this.maskColor = maskColor
+        return this
+    }
+
+    /**
+     * Set animation used when showing tooltips
+     */
+    fun setEnterAnimation(animation: HighlightAnimation): HighLight {
+        enterAnimation = animation
+        return this
+    }
+
+    /**
+     * Set animation used when hiding tooltips
+     */
+    fun setExitAnimation(animation: HighlightAnimation): HighLight {
+        exitAnimation = animation
+        return this
+    }
+
+    /**
+     * Set animation from predefined animation type
+     */
+    fun setEnterAnimation(
+        animationType: HighlightAnimationHelper.AnimationType,
+        duration: Long = 300
+    ): HighLight {
+        enterAnimation = HighlightAnimationHelper.createAnimation(animationType, duration)
+        return this
+    }
+
+    /**
+     * Set exit animation from predefined animation type
+     */
+    fun setExitAnimation(
+        animationType: HighlightAnimationHelper.AnimationType,
+        duration: Long = 300
+    ): HighLight {
+        exitAnimation = HighlightAnimationHelper.createAnimation(animationType, duration)
+        return this
+    }
+
+    /**
+     * Set a listener to be called when a tip view is inflated
+     */
+    fun setOnTipViewInflatedListener(listener: (View) -> Unit): HighLight {
+        onTipViewInflatedListener = listener
         return this
     }
 
@@ -190,7 +251,7 @@ class HighLight(private val mContext: Context) : HighLightInterface, OnGlobalLay
     }
 
     // Một cảnh có thể có nhiều bước làm nổi bật. Một bước hoàn thành sau đó mới bước sang bước tiếp theo
-    // Thêm sự kiện click, mỗi lần click truyền cho logic ứng dụng
+    // Legacy callback methods for backwards compatibility
     fun setClickCallback(clickCallback: OnClickCallback?): HighLight {
         mClickMessage = clickCallback?.let { mListenersHandler.obtainMessage(CLICK, it) }
         return this
@@ -211,14 +272,34 @@ class HighLight(private val mContext: Context) : HighLightInterface, OnGlobalLay
         return this
     }
 
-    /**
-     * Thiết lập callback khi layout hoàn tất
-     * @see .registerGlobalLayoutListener
-     * @param onLayoutCallback
-     * @return
-     */
     fun setOnLayoutCallback(onLayoutCallback: OnLayoutCallback?): HighLight {
         mLayoutMessage = onLayoutCallback?.let { mListenersHandler.obtainMessage(LAYOUT, it) }
+        return this
+    }
+
+    // Modern lambda-based callback methods
+    fun setOnClickListener(listener: () -> Unit): HighLight {
+        onClickListener = listener
+        return this
+    }
+
+    fun setOnShowListener(listener: (HightLightView) -> Unit): HighLight {
+        onShowListener = listener
+        return this
+    }
+
+    fun setOnRemoveListener(listener: () -> Unit): HighLight {
+        onRemoveListener = listener
+        return this
+    }
+
+    fun setOnNextListener(listener: (HightLightView?, View?, View?) -> Unit): HighLight {
+        onNextListener = listener
+        return this
+    }
+
+    fun setOnLayoutListener(listener: () -> Unit): HighLight {
+        onLayoutListener = listener
         return this
     }
 
@@ -290,6 +371,13 @@ class HighLight(private val mContext: Context) : HighLightInterface, OnGlobalLay
         val hightLightView = HightLightView(mContext, this, maskColor, mViewRects, isNext).apply {
             // Thêm ID duy nhất cho view làm nổi bật bởi isanwenyu@163.com vào 2016/9/28
             id = R.id.high_light_view
+
+            // Set animations if available
+            enterAnimation?.let { setEnterAnimation(it) }
+            exitAnimation?.let { setExitAnimation(it) }
+
+            // Set tip view inflated listener
+            onTipViewInflatedListener?.let { setOnTipViewInflatedListener(it) }
         }
 
         // Tương thích với AutoFrameLayout, v.v.
@@ -327,6 +415,7 @@ class HighLight(private val mContext: Context) : HighLightInterface, OnGlobalLay
                 // Thêm autoRemove bởi isanwenyu@163.com
                 if (autoRemove) remove()
                 sendClickMessage()
+                onClickListener?.invoke() // Call lambda if set
             }
         }
 
@@ -337,12 +426,27 @@ class HighLight(private val mContext: Context) : HighLightInterface, OnGlobalLay
 
         // Gửi callback hiển thị
         sendShowMessage()
+        onShowListener?.invoke(hightLightView) // Call lambda if set
         return this
     }
 
     override fun remove(): HighLight {
         val hightLightView = getHightLightView() ?: return this
-        val parent = hightLightView.parent as? ViewGroup ?: return this
+
+        // Sử dụng animation khi xóa nếu có
+        if (exitAnimation != null) {
+            hightLightView.removeTipWithAnimation {
+                performRemove(hightLightView)
+            }
+        } else {
+            performRemove(hightLightView)
+        }
+
+        return this
+    }
+
+    private fun performRemove(hightLightView: HightLightView) {
+        val parent = hightLightView.parent as? ViewGroup ?: return
 
         when (parent) {
             is RelativeLayout, is FrameLayout -> {
@@ -360,8 +464,8 @@ class HighLight(private val mContext: Context) : HighLightInterface, OnGlobalLay
 
         mHightLightView = null
         sendRemoveMessage()
+        onRemoveListener?.invoke() // Call lambda if set
         this.isShowing = false
-        return this
     }
 
     private fun sendClickMessage() {
@@ -386,6 +490,7 @@ class HighLight(private val mContext: Context) : HighLightInterface, OnGlobalLay
         mLayoutMessage?.let {
             Message.obtain(it).sendToTarget()
         }
+        onLayoutListener?.invoke() // Call lambda if set
     }
 
     fun sendNextMessage() {
@@ -394,11 +499,20 @@ class HighLight(private val mContext: Context) : HighLightInterface, OnGlobalLay
         val hightLightView = getHightLightView() ?: return
 
         val viewPosInfo = hightLightView.curentViewPosInfo ?: return
+
+        // Call legacy callback
         mNextMessage?.let { message ->
             message.arg1 = viewPosInfo.view?.id ?: -1
             message.arg2 = viewPosInfo.layoutId
             Message.obtain(message).sendToTarget()
         }
+
+        // Call modern lambda callback
+        onNextListener?.invoke(
+            hightLightView,
+            viewPosInfo.view,
+            hightLightView.findViewById(viewPosInfo.layoutId)
+        )
     }
 
     /**
@@ -453,3 +567,4 @@ class HighLight(private val mContext: Context) : HighLightInterface, OnGlobalLay
         private const val LAYOUT = 0x44
     }
 }
+

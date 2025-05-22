@@ -13,6 +13,8 @@ import android.view.View
 import android.widget.FrameLayout
 import com.dat.dathighlight.HighLight
 import com.dat.dathighlight.HighLight.ViewPosInfo
+import com.dat.dathighlight.animation.HighlightAnimation
+import com.dat.dathighlight.animation.HighlightAnimationHelper
 
 /**
  * Được tạo bởi zhy vào 15/10/8.
@@ -42,10 +44,44 @@ class HightLightView(
     private var mPosition = -1 //vị trí hiện tại của layout gợi ý đang hiển thị
     private var mViewPosInfo: ViewPosInfo? = null //thông tin vị trí layout được làm nổi bật hiện tại
 
+    // Các thuộc tính animation mới
+    private var enterAnimation: HighlightAnimation? = null
+    private var exitAnimation: HighlightAnimation? = null
+    private var tipViewInflatedListener: ((View) -> Unit)? = null
+
     init {
         this.maskColor = maskColor
         this.isNext = isNext
         setWillNotDraw(false)
+
+        // Mặc định sử dụng FADE animation
+        enterAnimation = HighlightAnimationHelper.createAnimation(
+            HighlightAnimationHelper.AnimationType.FADE
+        )
+        exitAnimation = HighlightAnimationHelper.createAnimation(
+            HighlightAnimationHelper.AnimationType.FADE
+        )
+    }
+
+    /**
+     * Set animation to be used when showing tooltips
+     */
+    fun setEnterAnimation(animation: HighlightAnimation) {
+        this.enterAnimation = animation
+    }
+
+    /**
+     * Set animation to be used when hiding tooltips
+     */
+    fun setExitAnimation(animation: HighlightAnimation) {
+        this.exitAnimation = animation
+    }
+
+    /**
+     * Set listener to be called when a tip view is inflated
+     */
+    fun setOnTipViewInflatedListener(listener: (View) -> Unit) {
+        this.tipViewInflatedListener = listener
     }
 
     fun addViewForTip() {
@@ -64,10 +100,19 @@ class HightLightView(
             }
             mViewPosInfo = mViewRects.getOrNull(mPosition)
 
-            removeAllViews() // Xóa tất cả các layout gợi ý
-            mViewPosInfo?.let { addViewForEveryTip(it) }
-
-            mHighLight?.sendNextMessage()
+            // Trước khi xóa views, thực hiện exit animation nếu có views
+            val currentView = if (childCount > 0) getChildAt(0) else null
+            if (currentView != null && exitAnimation != null) {
+                exitAnimation?.animateHide(currentView) {
+                    removeAllViews() // Xóa tất cả các layout gợi ý
+                    mViewPosInfo?.let { addViewForEveryTip(it) }
+                    mHighLight?.sendNextMessage()
+                }
+            } else {
+                removeAllViews() // Xóa tất cả các layout gợi ý
+                mViewPosInfo?.let { addViewForEveryTip(it) }
+                mHighLight?.sendNextMessage()
+            }
         } else {
             for (viewPosInfo in mViewRects) {
                 addViewForEveryTip(viewPosInfo)
@@ -86,6 +131,9 @@ class HightLightView(
             //đặt id thành layout id để HighLight tìm kiếm
             view.id = viewPosInfo.layoutId
 
+            // Thông báo cho listener về view vừa được inflate
+            tipViewInflatedListener?.invoke(view)
+
             val lp = buildTipLayoutParams(view, viewPosInfo) ?: return
 
             lp.leftMargin = marginInfo.leftMargin.toInt()
@@ -97,7 +145,47 @@ class HightLightView(
             lp.gravity = if (lp.rightMargin != 0) Gravity.RIGHT else Gravity.LEFT
             lp.gravity = lp.gravity or if (lp.bottomMargin != 0) Gravity.BOTTOM else Gravity.TOP
 
+            // Ban đầu view sẽ được ẩn nếu có animation
+            if (enterAnimation != null) {
+                view.visibility = View.INVISIBLE
+            }
+
             addView(view, lp)
+
+            // Áp dụng animation nếu có
+            if (enterAnimation != null) {
+                enterAnimation?.animateShow(view)
+            }
+        }
+    }
+
+    // Phương thức mới để xóa tip hiện tại với animation
+    fun removeTipWithAnimation(onRemoved: () -> Unit = {}) {
+        if (childCount == 0) {
+            onRemoved()
+            return
+        }
+
+        val views = mutableListOf<View>()
+        for (i in 0 until childCount) {
+            views.add(getChildAt(i))
+        }
+
+        if (exitAnimation != null) {
+            var viewsRemaining = views.size
+
+            for (view in views) {
+                exitAnimation?.animateHide(view) {
+                    viewsRemaining--
+                    if (viewsRemaining == 0) {
+                        removeAllViews()
+                        onRemoved()
+                    }
+                }
+            }
+        } else {
+            removeAllViews()
+            onRemoved()
         }
     }
 
