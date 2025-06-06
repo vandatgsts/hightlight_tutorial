@@ -1,12 +1,9 @@
 package com.dat.dathighlight.position
 
 import android.graphics.RectF
-import com.dat.dathighlight.HighLight.MarginInfo
+import com.dat.dathighlight.HighLight
 
-/**
- * Được tạo bởi caizepeng vào 16/8/20.
- */
-class OnTopPosCallback : OnBaseCallback {
+class OnCenterPosCallback : OnBaseCallback {
     constructor()
 
     constructor(offset: Float) : super(offset)
@@ -15,12 +12,12 @@ class OnTopPosCallback : OnBaseCallback {
         rightMargin: Float,
         bottomMargin: Float,
         rectF: RectF?,
-        marginInfo: MarginInfo?
+        marginInfo: HighLight.MarginInfo?,
     ) {
         if (rectF == null || marginInfo == null) return
 
 //        marginInfo.leftMargin = rectF.right - rectF.width() / 2
         marginInfo.leftMargin = 0f
-        marginInfo.bottomMargin = bottomMargin + rectF.height() + offset
+        marginInfo.topMargin = rectF.top + offset
     }
 }
