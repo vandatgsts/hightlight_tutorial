@@ -11,25 +11,7 @@ Dathighlight là một thư viện Android mạnh mẽ giúp tạo các hướng
 - 🛡️ **Quản lý lifecycle an toàn** giúp tránh memory leak
 - 🔧 **API Kotlin hiện đại** với DSL và lambda callbacks
 
-## Cài đặt
 
-Thêm vào file `settings.gradle` của dự án:
-
-```groovy
-repositories {
-    mavenCentral()
-    // Nếu sử dụng jitpack
-    maven { url 'https://jitpack.io' }
-}
-```
-
-Sau đó thêm vào file `build.gradle` của module:
-
-```groovy
-dependencies {
-    implementation 'com.github.yourusername:dathighlight:1.0.0'
-}
-```
 
 ## Sử dụng cơ bản
 
